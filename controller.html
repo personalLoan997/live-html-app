@@ -3,41 +3,30 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🎮 Controller</title>
+<title>👤 User View</title>
 <style>
-  body { font-family: system-ui, sans-serif; background:#0f172a; color:#e2e8f0; margin:0; padding:20px; }
-  h2 { margin-top:0; }
-  textarea {
-    width:100%; height:300px; padding:12px; box-sizing:border-box;
-    background:#1e293b; color:#a5f3fc; border:1px solid #334155;
-    border-radius:8px; font-family: monospace; font-size:14px; resize:vertical;
+  body { margin:0; padding:0; font-family: system-ui, sans-serif; overflow: hidden; background: #fff; }
+  #loading { padding:40px; text-align:center; color:#666; }
+  
+  /* Iframe ko poori screen par fit karne ke liye */
+  #contentFrame { 
+    width: 100vw; 
+    height: 100vh; 
+    border: none; 
+    display: none; 
   }
-  button {
-    padding:10px 24px; margin-top:10px; margin-right:8px; border:none;
-    border-radius:6px; background:#6366f1; color:white; font-size:15px;
-    font-weight:600; cursor:pointer;
-  }
-  button:hover { background:#4f46e5; }
-  .status { margin-top:10px; font-size:13px; color:#94a3b8; }
-  .ok { color:#4ade80; }
 </style>
 </head>
 <body>
-  <h2>🎮 Controller Panel</h2>
-  <p style="color:#94a3b8;font-size:14px;">Yahan HTML code likho — User page pe turant dikhega</p>
-
-  <textarea id="htmlInput" placeholder="<h1>Hello World</h1>"></textarea>
-  <br>
-  <button onclick="sendData()">📤 Send to User</button>
-  <button onclick="clearData()" style="background:#dc2626;">🗑️ Clear</button>
-
-  <div class="status" id="status">Ready</div>
+  <div id="loading">⏳ Loading...</div>
+  
+  <!-- Yahan iframe banaya gaya hai jisme aapka code chalega -->
+  <iframe id="contentFrame" sandbox="allow-scripts allow-modals allow-forms allow-popups allow-same-origin"></iframe>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-    // Aapka Firebase Config yahan hai
     const firebaseConfig = {
       apiKey: "AIzaSyBqGMErCVVSm9xWilusYzlsYQStSiAQdV0",
       authDomain: "livehtmlcontroller.firebaseapp.com",
@@ -51,26 +40,24 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    const statusEl = document.getElementById("status");
 
-    window.sendData = async function () {
-      const html = document.getElementById("htmlInput").value;
-      try {
-        await set(ref(db, "page/html"), html);
-        statusEl.textContent = "✅ Sent successfully!";
-        statusEl.className = "status ok";
-      } catch (e) {
-        statusEl.textContent = "❌ Error: " + e.message;
-        statusEl.className = "status";
+    const iframe = document.getElementById("contentFrame");
+    const loadingEl = document.getElementById("loading");
+
+    onValue(ref(db, "page/html"), (snapshot) => {
+      const html = snapshot.val() || "";
+      
+      if (html.trim() !== "") {
+        loadingEl.style.display = "none";
+        iframe.style.display = "block";
+        
+        // Yahan magic ho raha hai: HTML ko iframe ke andar daal rahe hain
+        iframe.srcdoc = html;
+      } else {
+        loadingEl.style.display = "block";
+        iframe.style.display = "none";
       }
-    };
-
-    window.clearData = async function () {
-      await set(ref(db, "page/html"), "");
-      document.getElementById("htmlInput").value = "";
-      statusEl.textContent = "🗑️ Cleared";
-      statusEl.className = "status";
-    };
+    });
   </script>
 </body>
 </html>
