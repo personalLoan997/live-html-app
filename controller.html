@@ -124,7 +124,7 @@
     const db = getDatabase(app);
     const statusEl = document.getElementById("status");
     const htmlInput = document.getElementById("htmlInput");
-    let currentHtmlData = ""; // Jo bhi data bhejna hai wo yahan save hoga
+    let currentHtmlData = ""; 
 
     window.switchTab = function(tab) {
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -133,7 +133,6 @@
       document.getElementById(`content-${tab}`).classList.add('active');
     }
 
-    // --- HTML File Upload ---
     window.handleFileUpload = function(event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -149,51 +148,69 @@
       event.target.value = ''; 
     };
 
-    // --- Image Upload ---
+    // --- IMAGE UPLOAD WITH COMPRESSION ---
     window.handleImageUpload = function(event) {
       const file = event.target.files[0];
       if (!file) return;
       
       const reader = new FileReader();
       reader.onload = function(e) {
-        const base64Image = e.target.result;
-        
-        // Image ko HTML code mein convert kar rahe hain jo user ko dikhega
-        currentHtmlData = `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-            <style>
-              body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #000; overflow: hidden; display: flex; justify-content: center; align-items: center; }
-              img { width: 100%; height: 100%; object-fit: contain; }
-            </style>
-          </head>
-          <body>
-            <img src="${base64Image}" alt="Uploaded Image">
-          </body>
-          </html>
-        `;
-        
-        document.getElementById('imagePreview').innerHTML = `<img src="${base64Image}" style="max-width: 100%; max-height: 150px; border-radius: 6px;">`;
-        statusEl.textContent = `✅ Image loaded: ${file.name}`;
-        statusEl.className = "status ok";
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          const MAX_WIDTH = 1080;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > MAX_WIDTH) {
+            height = Math.round((height * MAX_WIDTH) / width);
+            width = MAX_WIDTH;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+          
+          // Yahan humne image ko stretch karne ke liye 'object-fit: fill' lagaya hai
+          currentHtmlData = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+              <style>
+                body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #000; overflow: hidden; }
+                img { width: 100vw; height: 100vh; object-fit: fill; display: block; }
+              </style>
+            </head>
+            <body>
+              <img src="${compressedBase64}" alt="Uploaded Image">
+            </body>
+            </html>
+          `;
+          
+          document.getElementById('imagePreview').innerHTML = `<img src="${compressedBase64}" style="max-width: 100%; max-height: 150px; border-radius: 6px;">`;
+          statusEl.textContent = `✅ Image loaded & compressed: ${file.name}`;
+          statusEl.className = "status ok";
+        };
+        img.src = e.target.result;
       };
       reader.readAsDataURL(file);
       event.target.value = ''; 
     };
 
-    // --- Send Data ---
     window.sendData = async function () {
       let dataToSend = "";
       
-      // Check karo ki konsa tab khula hai
       if (document.getElementById('content-image').classList.contains('active')) {
-        dataToSend = currentHtmlData; // Agar image hai to currentHtmlData me image ka HTML hoga
+        dataToSend = currentHtmlData; 
       } else if (document.getElementById('content-paste').classList.contains('active')) {
-        dataToSend = htmlInput.value; // Agar paste tab hai to textarea se lo
+        dataToSend = htmlInput.value; 
       } else {
-        dataToSend = currentHtmlData; // Agar file upload tab hai to file ka data
+        dataToSend = currentHtmlData; 
       }
 
       if (!dataToSend || dataToSend.trim() === "") {
@@ -202,7 +219,7 @@
         return;
       }
 
-      const title = prompt("Is item ka naam kya rakhna hai? (Baad me pehchanne ke liye)", "Terminal " + new Date().toLocaleTimeString());
+      const title = prompt("Is item ka naam kya rakhna hai?", "Terminal " + new Date().toLocaleTimeString());
       if (title === null) return; 
 
       statusEl.textContent = "⏳ Sending...";
@@ -219,13 +236,18 @@
       }
     };
 
-    // --- History Logic ---
     function saveToHistory(title, html) {
-      let history = JSON.parse(localStorage.getItem('jakarHistory')) || [];
-      history.unshift({ id: Date.now(), title: title, html: html });
-      if (history.length > 15) history.pop();
-      localStorage.setItem('jakarHistory', JSON.stringify(history));
-      renderHistory();
+      try {
+        let history = JSON.parse(localStorage.getItem('jakarHistory')) || [];
+        history.unshift({ id: Date.now(), title: title, html: html });
+        if (history.length > 10) history.pop(); 
+        localStorage.setItem('jakarHistory', JSON.stringify(history));
+        renderHistory();
+      } catch (err) {
+        localStorage.removeItem('jakarHistory');
+        statusEl.textContent = "⚠️ History full thi, isliye purani clear kar di gayi.";
+        statusEl.className = "status";
+      }
     }
 
     function renderHistory() {
@@ -247,7 +269,6 @@
       const history = JSON.parse(localStorage.getItem('jakarHistory')) || [];
       const item = history.find(x => x.id === id);
       if (item) {
-        // Agar history me image hai to image tab par switch karo
         if (item.html.includes('<img src="data:image')) {
           currentHtmlData = item.html;
           switchTab('image');
