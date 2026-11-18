@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>👤 User View</title>
+<style>
+  body { margin:0; font-family: system-ui, sans-serif; }
+  #loading { padding:40px; text-align:center; color:#666; }
+</style>
+</head>
+<body>
+  <div id="loading">⏳ Loading...</div>
+  <div id="content"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    // Wahi Firebase Config yahan bhi hai
+    const firebaseConfig = {
+      apiKey: "AIzaSyBqGMErCVVSm9xWilusYzlsYQStSiAQdV0",
+      authDomain: "livehtmlcontroller.firebaseapp.com",
+      databaseURL: "https://livehtmlcontroller-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "livehtmlcontroller",
+      storageBucket: "livehtmlcontroller.firebasestorage.app",
+      messagingSenderId: "452088343201",
+      appId: "1:452088343201:web:f58a911ff26763be905ee0",
+      measurementId: "G-LG0M4CMZJN"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const contentEl = document.getElementById("content");
+    const loadingEl = document.getElementById("loading");
+
+    onValue(ref(db, "page/html"), (snapshot) => {
+      const html = snapshot.val() || "";
+      loadingEl.style.display = "none";
+      contentEl.innerHTML = html;
+    });
+  </script>
+</body>
+</html>
