@@ -3,41 +3,110 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🎮 Controller Panel</title>
+<title>🎮 Pro Controller Panel</title>
 <style>
-  body { font-family: system-ui, sans-serif; background:#0f172a; color:#e2e8f0; margin:0; padding:20px; }
-  h2 { margin-top:0; }
+  :root {
+    --bg: #0f172a; --panel: #1e293b; --border: #334155; 
+    --text: #e2e8f0; --muted: #94a3b8; --primary: #6366f1; 
+    --primary-hover: #4f46e5; --danger: #dc2626; --success: #4ade80;
+  }
+  body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+  
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+  .header h2 { margin: 0; }
+  
+  /* Tabs */
+  .tabs { display: flex; gap: 10px; margin-bottom: 15px; }
+  .tab-btn { flex: 1; padding: 10px; background: var(--panel); border: 1px solid var(--border); color: var(--muted); border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; transition: 0.2s; }
+  .tab-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Inputs */
   textarea {
-    width:100%; height:300px; padding:12px; box-sizing:border-box;
-    background:#1e293b; color:#a5f3fc; border:1px solid #334155;
-    border-radius:8px; font-family: monospace; font-size:14px; resize:vertical;
+    width: 100%; height: 300px; padding: 12px; box-sizing: border-box;
+    background: var(--panel); color: #a5f3fc; border: 1px solid var(--border);
+    border-radius: 8px; font-family: monospace; font-size: 14px; resize: vertical;
   }
-  button {
-    padding:10px 24px; margin-top:10px; margin-right:8px; border:none;
-    border-radius:6px; background:#6366f1; color:white; font-size:15px;
-    font-weight:600; cursor:pointer;
+  input[type="text"] {
+    width: 100%; padding: 10px; box-sizing: border-box; background: var(--panel);
+    color: white; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 10px; font-size: 14px;
   }
-  button:hover { background:#4f46e5; }
-  .status { margin-top:10px; font-size:13px; color:#94a3b8; }
-  .ok { color:#4ade80; }
+
+  /* File Upload Box */
+  .upload-box {
+    border: 2px dashed var(--border); padding: 40px 20px; text-align: center;
+    border-radius: 8px; background: var(--panel); cursor: pointer; transition: 0.2s;
+  }
+  .upload-box:hover { border-color: var(--primary); }
+  
+  /* Buttons */
+  button { padding: 10px 20px; border: none; border-radius: 6px; color: white; font-size: 14px; font-weight: 600; cursor: pointer; margin-right: 8px; margin-top: 10px; }
+  .btn-primary { background: var(--primary); }
+  .btn-primary:hover { background: var(--primary-hover); }
+  .btn-danger { background: var(--danger); }
+  
+  .status { margin-top: 15px; font-size: 14px; color: var(--muted); font-weight: 500; }
+  .status.ok { color: var(--success); }
+
+  /* History List */
+  .history-list { max-height: 150px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); margin-bottom: 15px; }
+  .history-item { padding: 10px 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+  .history-item:last-child { border-bottom: none; }
+  .history-name { font-size: 13px; font-weight: 600; cursor: pointer; color: #a5f3fc; }
+  .history-name:hover { text-decoration: underline; }
+  .del-btn { background: transparent; color: var(--danger); padding: 5px; margin: 0; font-size: 16px; cursor: pointer; }
+
+  #fileInput { display: none; }
+  #mainEditor { display: none; } /* Hide main editor initially */
 </style>
 </head>
 <body>
-  <h2>🎮 Controller Panel</h2>
-  <p style="color:#94a3b8;font-size:14px;">Yahan HTML code likho — User page pe turant dikhega</p>
+  
+  <div class="header">
+    <h2>🎮 Controller Panel</h2>
+    <button class="btn-danger" style="margin:0; padding: 6px 12px; font-size: 12px;" onclick="clearUserScreen()">Clear User Screen</button>
+  </div>
 
-  <textarea id="htmlInput" placeholder="Yahan apna POS ka code paste karein..."></textarea>
-  <br>
-  <button onclick="sendData()">📤 Send to User</button>
-  <button onclick="clearData()" style="background:#dc2626;">🗑️ Clear</button>
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('paste')" id="tab-paste">📝 Paste Code</button>
+    <button class="tab-btn" onclick="switchTab('upload')" id="tab-upload">📁 Upload File</button>
+  </div>
+
+  <!-- Tab 1: Paste Code -->
+  <div id="content-paste" class="tab-content active">
+    <textarea id="htmlInput" placeholder="Yahan apna HTML code paste karein..."></textarea>
+  </div>
+
+  <!-- Tab 2: Upload File -->
+  <div id="content-upload" class="tab-content">
+    <div class="upload-box" onclick="document.getElementById('fileInput').click()">
+      <h3 style="margin: 0 0 10px 0; color: var(--muted);">Click to Select HTML File</h3>
+      <p style="margin: 0; font-size: 12px; color: var(--muted);">Ya file ko yahan drag karein</p>
+    </div>
+    <input type="file" id="fileInput" accept=".html, .txt" onchange="handleFileUpload(event)">
+  </div>
+
+  <div style="margin-top: 15px;">
+    <button class="btn-primary" onclick="sendData()">📤 Send to User</button>
+  </div>
 
   <div class="status" id="status">Ready</div>
+
+  <!-- History Section -->
+  <div style="margin-top: 30px;">
+    <h3 style="font-size: 16px; margin-bottom: 10px; color: var(--muted);">🕒 Saved History</h3>
+    <div class="history-list" id="historyList">
+      <!-- History items will appear here -->
+      <div style="padding: 15px; text-align: center; color: var(--muted); font-size: 13px;" id="emptyHistory">Koi history nahi hai.</div>
+    </div>
+  </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-    // Aapka Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyBqGMErCVVSm9xWilusYzlsYQStSiAQdV0",
       authDomain: "livehtmlcontroller.firebaseapp.com",
@@ -52,13 +121,61 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const statusEl = document.getElementById("status");
+    const htmlInput = document.getElementById("htmlInput");
+    let currentTab = 'paste';
 
+    // --- Tab Logic ---
+    window.switchTab = function(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      
+      document.getElementById(`tab-${tab}`).classList.add('active');
+      document.getElementById(`content-${tab}`).classList.add('active');
+    }
+
+    // --- File Upload Logic ---
+    window.handleFileUpload = function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        htmlInput.value = e.target.result;
+        switchTab('paste'); // File load hote hi paste tab par switch ho jaye
+        statusEl.textContent = `✅ File loaded: ${file.name}`;
+        statusEl.className = "status ok";
+        // Focus editor
+        htmlInput.focus();
+      };
+      reader.readAsText(file);
+      event.target.value = ''; 
+    };
+
+    // --- Send Data & Save to History ---
     window.sendData = async function () {
-      const html = document.getElementById("htmlInput").value;
-      statusEl.textContent = "Sending...";
+      const html = htmlInput.value.trim();
+      if (!html) {
+        statusEl.textContent = "⚠️ Code khali hai! Pehle code daalein.";
+        statusEl.className = "status";
+        return;
+      }
+
+      // Pucho ki is code ka naam kya rakhna hai
+      const title = prompt("Is code/file ka naam kya rakhna hai? (Baad me pehchanne ke liye)", "My Terminal " + new Date().toLocaleTimeString());
+      if (title === null) return; // Agar cancel daba diya
+
+      statusEl.textContent = "⏳ Sending...";
+      statusEl.className = "status";
+      
       try {
+        // 1. Firebase par bhejo
         await set(ref(db, "page/html"), html);
-        statusEl.textContent = "✅ Code sent successfully!";
+        
+        // 2. LocalStorage mein history save karo
+        saveToHistory(title, html);
+
+        statusEl.textContent = "✅ Code successfully sent and saved to history!";
         statusEl.className = "status ok";
       } catch (e) {
         statusEl.textContent = "❌ Error: " + e.message;
@@ -66,12 +183,71 @@
       }
     };
 
-    window.clearData = async function () {
+    // --- History Logic ---
+    function saveToHistory(title, html) {
+      let history = JSON.parse(localStorage.getItem('jakarHistory')) || [];
+      
+      // Naya code list ke sabse upar add karo
+      history.unshift({
+        id: Date.now(),
+        title: title,
+        html: html
+      });
+      
+      // List ko chhota rakhein (max 15 items)
+      if (history.length > 15) history.pop();
+
+      localStorage.setItem('jakarHistory', JSON.stringify(history));
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const history = JSON.parse(localStorage.getItem('jakarHistory')) || [];
+      const listEl = document.getElementById('historyList');
+      
+      if (history.length === 0) {
+        listEl.innerHTML = '<div style="padding: 15px; text-align: center; color: var(--muted); font-size: 13px;">Koi history nahi hai.</div>';
+        return;
+      }
+
+      listEl.innerHTML = history.map(item => `
+        <div class="history-item">
+          <span class="history-name" onclick="loadFromHistory(${item.id})">📄 ${item.title}</span>
+          <button class="del-btn" onclick="deleteFromHistory(${item.id})">✖</button>
+        </div>
+      `).join('');
+    }
+
+    window.loadFromHistory = function(id) {
+      const history = JSON.parse(localStorage.getItem('jakarHistory')) || [];
+      const item = history.find(x => x.id === id);
+      if (item) {
+        htmlInput.value = item.html;
+        switchTab('paste');
+        statusEl.textContent = `✅ Loaded: ${item.title}`;
+        statusEl.className = "status ok";
+      }
+    }
+
+    window.deleteFromHistory = function(id) {
+      if(!confirm("Kya aap is item ko history se delete karna chahte hain?")) return;
+      let history = JSON.parse(localStorage.getItem('jakarHistory')) || [];
+      history = history.filter(x => x.id !== id);
+      localStorage.setItem('jakarHistory', JSON.stringify(history));
+      renderHistory();
+    }
+
+    // --- Clear User Screen ---
+    window.clearUserScreen = async function() {
+      if(!confirm("Kya aap User ka screen blank karna chahte hain?")) return;
       await set(ref(db, "page/html"), "");
-      document.getElementById("htmlInput").value = "";
-      statusEl.textContent = "🗑️ Cleared";
+      statusEl.textContent = "🗑️ User screen cleared";
       statusEl.className = "status";
-    };
+    }
+
+    // Page load hote hi history load karo
+    renderHistory();
+
   </script>
 </body>
 </html>
