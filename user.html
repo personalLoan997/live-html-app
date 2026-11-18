@@ -2,22 +2,22 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>👤 User View</title>
 <style>
-  body { margin:0; font-family: system-ui, sans-serif; }
-  #loading { padding:40px; text-align:center; color:#666; }
+  body { margin:0; padding:0; font-family: system-ui, sans-serif; overflow: hidden; background: #0f172a; }
+  #loading { padding:40px; text-align:center; color:#fff; font-size: 18px; }
+  #contentFrame { width: 100vw; height: 100dvh; border: none; display: none; }
 </style>
 </head>
 <body>
-  <div id="loading">⏳ Loading...</div>
-  <div id="content"></div>
+  <div id="loading">⏳ Loading Terminal...</div>
+  <iframe id="contentFrame" sandbox="allow-scripts allow-modals allow-forms allow-popups allow-same-origin allow-presentation"></iframe>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 
-    // Wahi Firebase Config yahan bhi hai
     const firebaseConfig = {
       apiKey: "AIzaSyBqGMErCVVSm9xWilusYzlsYQStSiAQdV0",
       authDomain: "livehtmlcontroller.firebaseapp.com",
@@ -32,13 +32,32 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    const contentEl = document.getElementById("content");
+    const iframe = document.getElementById("contentFrame");
     const loadingEl = document.getElementById("loading");
+    let currentBlobUrl = null;
 
     onValue(ref(db, "page/html"), (snapshot) => {
       const html = snapshot.val() || "";
-      loadingEl.style.display = "none";
-      contentEl.innerHTML = html;
+      
+      if (html.trim() !== "") {
+        loadingEl.style.display = "none";
+        iframe.style.display = "block";
+        
+        // Purana Blob URL delete karein memory se
+        if (currentBlobUrl) {
+          URL.revokeObjectURL(currentBlobUrl);
+        }
+
+        // Naya Blob URL banayein
+        const blob = new Blob([html], { type: 'text/html' });
+        currentBlobUrl = URL.createObjectURL(blob);
+        
+        // Iframe mein load karein
+        iframe.src = currentBlobUrl;
+      } else {
+        loadingEl.style.display = "block";
+        iframe.style.display = "none";
+      }
     });
   </script>
 </body>
