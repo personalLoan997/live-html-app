@@ -133,22 +133,25 @@
       document.getElementById(`content-${tab}`).classList.add('active');
     }
 
+    // --- FIXED: Ab HTML file ka poora code save hoga ---
     window.handleFileUpload = function(event) {
       const file = event.target.files[0];
       if (!file) return;
+      
       const reader = new FileReader();
       reader.onload = function(e) {
-        currentHtmlData = e.target.result;
+        const fileContent = e.target.result;
+        currentHtmlData = fileContent; // File ka poora code yahan save ho raha hai
+        htmlInput.value = fileContent; // Textarea mein bhi code dikhega
         switchTab('paste');
-        htmlInput.value = "File upload ho gayi hai. Send button dabayein.";
-        statusEl.textContent = `✅ File loaded: ${file.name}`;
+        statusEl.textContent = `✅ File loaded successfully: ${file.name}`;
         statusEl.className = "status ok";
       };
       reader.readAsText(file);
       event.target.value = ''; 
     };
 
-    // --- IMAGE UPLOAD WITH BETTER COMPRESSION & SMART FIT ---
+    // --- IMAGE UPLOAD WITH COMPRESSION ---
     window.handleImageUpload = function(event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -160,7 +163,6 @@
           const canvas = document.createElement('canvas');
           const ctx = canvas.getContext('2d');
           
-          // Text saaf dikhe isliye width badha di (Max 1440px)
           const MAX_WIDTH = 1440;
           let width = img.width;
           let height = img.height;
@@ -174,11 +176,8 @@
           canvas.height = height;
           ctx.drawImage(img, 0, 0, width, height);
 
-          // Quality 0.85 (85%) kar di taaki text blur na ho
           const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85);
           
-          // object-fit: contain use kiya taaki image kharab na ho
-          // Background color black ki jagah 'auto' (transparent/dark) rakha hai
           currentHtmlData = `
             <!DOCTYPE html>
             <html>
@@ -196,7 +195,7 @@
           `;
           
           document.getElementById('imagePreview').innerHTML = `<img src="${compressedBase64}" style="max-width: 100%; max-height: 150px; border-radius: 6px;">`;
-          statusEl.textContent = `✅ Image loaded & compressed perfectly: ${file.name}`;
+          statusEl.textContent = `✅ Image loaded & compressed: ${file.name}`;
           statusEl.className = "status ok";
         };
         img.src = e.target.result;
@@ -278,6 +277,7 @@
           document.getElementById('imagePreview').innerHTML = `<p style="color:#4ade80;">Image History se load ho gayi</p>`;
         } else {
           htmlInput.value = item.html;
+          currentHtmlData = item.html;
           switchTab('paste');
         }
         statusEl.textContent = `✅ Loaded: ${item.title}`;
